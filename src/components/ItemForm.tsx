@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { useInventory } from "../context/InventoryContext";
-import { Upload, X, MapPin, DollarSign } from "lucide-react";
+import { Upload, X, MapPin, IndianRupee } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
-    const { addItem } = useInventory();
+    const { addItem, items } = useInventory();
+
+    // Automatically find existing categories
+    const existingCategories = Array.from(new Set(items.map(item => item.category).filter(Boolean)));
+    const [isCustomCategory, setIsCustomCategory] = useState(existingCategories.length === 0);
 
     const [name, setName] = useState("");
     const [category, setCategory] = useState("");
@@ -94,14 +98,50 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
-                        <input
-                            type="text"
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                            placeholder="e.g. Watches, Perfumes"
-                            required
-                        />
+                        {!isCustomCategory && existingCategories.length > 0 ? (
+                            <select
+                                value={category}
+                                onChange={(e) => {
+                                    if (e.target.value === "__NEW__") {
+                                        setIsCustomCategory(true);
+                                        setCategory("");
+                                    } else {
+                                        setCategory(e.target.value);
+                                    }
+                                }}
+                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium text-gray-700 cursor-pointer"
+                                required
+                            >
+                                <option value="" disabled>Select a category...</option>
+                                {existingCategories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                                <option value="__NEW__" className="font-bold text-blue-600">+ Add New Category</option>
+                            </select>
+                        ) : (
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all pr-16"
+                                    placeholder="e.g. Watches, Perfumes"
+                                    required
+                                />
+                                {existingCategories.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCustomCategory(false);
+                                            setCategory(existingCategories[0] || "");
+                                        }}
+                                        className="absolute right-3 top-2.5 text-sm text-gray-400 font-semibold hover:text-gray-600 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Description (Optional)</label>
@@ -144,7 +184,7 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                <span className="flex items-center gap-1"><DollarSign className="w-4 h-4 text-red-500" /> Buying Price</span>
+                                <span className="flex items-center gap-1"><IndianRupee className="w-4 h-4 text-red-500" /> Buying Price</span>
                             </label>
                             <input
                                 type="number"
@@ -157,7 +197,7 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                <span className="flex items-center gap-1"><DollarSign className="w-4 h-4 text-emerald-500" /> Estimated Selling Price</span>
+                                <span className="flex items-center gap-1"><IndianRupee className="w-4 h-4 text-emerald-500" /> Estimated Selling Price</span>
                             </label>
                             <input
                                 type="number"

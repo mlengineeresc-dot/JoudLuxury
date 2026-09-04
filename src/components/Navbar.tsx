@@ -16,7 +16,7 @@ export const Navbar: React.FC<{ onAddClick: () => void }> = ({ onAddClick }) => 
                             <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-500/20">
                                 <PackageSearch className="w-5 h-5 sm:w-6 sm:h-6" />
                             </div>
-                            <span className="text-xl font-black tracking-tight text-gray-900 hidden sm:block">SalesTracker</span>
+                            <span className="text-xl font-black tracking-tight text-gray-900 hidden sm:block">Joud Luxury</span>
                         </Link>
                         <div className="flex gap-1 sm:gap-2 border-l border-gray-200 pl-4 sm:pl-6 h-8 items-center">
                             <Link to="/" className={`px-2 sm:px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${location.pathname === '/' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
