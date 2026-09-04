@@ -7,6 +7,7 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
     const { addItem } = useInventory();
 
     const [name, setName] = useState("");
+    const [category, setCategory] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
     const [buyingPrice, setBuyingPrice] = useState("");
@@ -56,6 +57,7 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
         try {
             await addItem({
                 name,
+                category,
                 description,
                 location,
                 buyingPrice: parseFloat(buyingPrice) || 0,
@@ -87,6 +89,17 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+                        <input
+                            type="text"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            placeholder="e.g. Watches, Perfumes"
                             required
                         />
                     </div>

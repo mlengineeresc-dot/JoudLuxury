@@ -10,8 +10,13 @@ export const Dashboard: React.FC = () => {
     const { logout } = useAuth();
     const [showAddForm, setShowAddForm] = useState(false);
     const [filter, setFilter] = useState<"all" | "available" | "sold">("all");
+    const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
+    const categories = ["All", ...Array.from(new Set(items.map(item => item.category).filter(Boolean)))];
 
     const filteredItems = items.filter(item => {
+        if (selectedCategory !== "All" && item.category !== selectedCategory) return false;
+
         if (filter === "available") return !item.isSold;
         if (filter === "sold") return item.isSold;
         return true;
@@ -74,26 +79,42 @@ export const Dashboard: React.FC = () => {
 
                 {/* Content Section */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 min-h-[500px]">
-                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-                            <button
-                                onClick={() => setFilter("all")}
-                                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${filter === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                            >
-                                All Items
-                            </button>
-                            <button
-                                onClick={() => setFilter("available")}
-                                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${filter === "available" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                            >
-                                Inventory ({stats.availableItems})
-                            </button>
-                            <button
-                                onClick={() => setFilter("sold")}
-                                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${filter === "sold" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                            >
-                                Sold ({stats.soldItems})
-                            </button>
+                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-2 flex-wrap">
+                                {categories.map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedCategory === cat
+                                                ? 'bg-blue-100 text-blue-700 shadow-sm border border-blue-200'
+                                                : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-max">
+                                <button
+                                    onClick={() => setFilter("all")}
+                                    className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${filter === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                >
+                                    All Items
+                                </button>
+                                <button
+                                    onClick={() => setFilter("available")}
+                                    className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${filter === "available" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                >
+                                    Inventory
+                                </button>
+                                <button
+                                    onClick={() => setFilter("sold")}
+                                    className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${filter === "sold" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                >
+                                    Sold
+                                </button>
+                            </div>
                         </div>
 
                         <button

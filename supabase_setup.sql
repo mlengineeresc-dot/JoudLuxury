@@ -2,6 +2,7 @@
 CREATE TABLE items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Uncategorized',
     description TEXT,
     location TEXT NOT NULL,
     "buyingPrice" NUMERIC NOT NULL,
@@ -38,3 +39,6 @@ CREATE POLICY "Allow public viewing of images" ON storage.objects FOR SELECT USI
 CREATE POLICY "Allow public upload of images" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'item-images');
 CREATE POLICY "Allow public update of images" ON storage.objects FOR UPDATE USING (bucket_id = 'item-images');
 CREATE POLICY "Allow public delete of images" ON storage.objects FOR DELETE USING (bucket_id = 'item-images');
+
+-- IF UPDATING AN EXISTING TABLE, RUN THIS:
+-- ALTER TABLE items ADD COLUMN category TEXT NOT NULL DEFAULT 'Uncategorized';

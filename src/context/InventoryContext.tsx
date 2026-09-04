@@ -39,6 +39,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const addItem = async (itemData: Omit<Item, "id" | "createdAt" | "isSold" | "actualProfit" | "initialQuantity">) => {
         const newItem = {
             name: itemData.name,
+            category: itemData.category,
             description: itemData.description,
             location: itemData.location,
             buyingPrice: itemData.buyingPrice,
