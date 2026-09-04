@@ -19,8 +19,8 @@ export const ItemCard: React.FC<{ item: Item }> = ({ item }) => {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group flex flex-col h-full">
             <div className="relative h-48 bg-gray-100 flex-shrink-0">
-                {item.imageBase64 ? (
-                    <img src={item.imageBase64} alt={item.name} className="w-full h-full object-cover" />
+                {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                         <Store className="w-12 h-12 mb-2 opacity-50" />

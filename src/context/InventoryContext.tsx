@@ -1,67 +1,111 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Item, InventoryStats } from "../types";
+import { supabase } from "../lib/supabase";
+
 interface InventoryContextType {
     items: Item[];
-    addItem: (item: Omit<Item, "id" | "createdAt" | "isSold" | "actualProfit" | "initialQuantity">) => void;
-    markAsSold: (id: string, amountSold: number, customSellingPrice?: number) => void;
-    deleteItem: (id: string) => void;
+    addItem: (item: Omit<Item, "id" | "createdAt" | "isSold" | "actualProfit" | "initialQuantity">) => Promise<void>;
+    markAsSold: (id: string, amountSold: number, customSellingPrice?: number) => Promise<void>;
+    deleteItem: (id: string) => Promise<void>;
     stats: InventoryStats;
+    loading: boolean;
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [items, setItems] = useState<Item[]>(() => {
-        const saved = localStorage.getItem("inventory_items");
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            return parsed.map((item: any) => ({
-                ...item,
-                quantity: item.quantity ?? (item.isSold ? 0 : 1),
-                initialQuantity: item.initialQuantity ?? 1,
-                actualProfit: item.actualProfit ?? 0,
-            }));
+    const [items, setItems] = useState<Item[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchItems = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('items')
+            .select('*')
+            .order('createdAt', { ascending: false });
+
+        if (error) {
+            console.error("Error fetching items:", error);
+        } else if (data) {
+            setItems(data as Item[]);
         }
-        return [];
-    });
+        setLoading(false);
+    };
 
     useEffect(() => {
-        localStorage.setItem("inventory_items", JSON.stringify(items));
-    }, [items]);
+        fetchItems();
+    }, []);
 
-    const addItem = (itemData: Omit<Item, "id" | "createdAt" | "isSold" | "actualProfit" | "initialQuantity">) => {
-        const newItem: Item = {
-            ...itemData,
-            id: crypto.randomUUID(),
-            initialQuantity: itemData.quantity,
+    const addItem = async (itemData: Omit<Item, "id" | "createdAt" | "isSold" | "actualProfit" | "initialQuantity">) => {
+        const newItem = {
+            name: itemData.name,
+            description: itemData.description,
+            location: itemData.location,
+            buyingPrice: itemData.buyingPrice,
+            sellingPrice: itemData.sellingPrice,
             actualProfit: 0,
-            isSold: false,
-            createdAt: new Date().toISOString(),
+            imageUrl: itemData.imageUrl,
+            quantity: itemData.quantity,
+            initialQuantity: itemData.quantity,
+            isSold: false
         };
-        setItems((prev) => [newItem, ...prev]);
+
+        const { data, error } = await supabase
+            .from('items')
+            .insert(newItem)
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Error adding item:", error);
+            throw error;
+        }
+        if (data) setItems((prev) => [data as Item, ...prev]);
     };
 
-    const markAsSold = (id: string, amountSold: number, customSellingPrice?: number) => {
-        setItems((prev) =>
-            prev.map((item) => {
-                if (item.id === id) {
-                    const finalSellingPrice = customSellingPrice ?? item.sellingPrice;
-                    const newQuantity = Math.max(0, item.quantity - amountSold);
-                    const profitGained = (finalSellingPrice - item.buyingPrice) * amountSold;
-                    return {
-                        ...item,
-                        quantity: newQuantity,
-                        isSold: newQuantity === 0,
-                        actualProfit: item.actualProfit + profitGained,
-                        soldAt: new Date().toISOString(),
-                    };
-                }
-                return item;
-            })
-        );
+    const markAsSold = async (id: string, amountSold: number, customSellingPrice?: number) => {
+        const item = items.find(i => i.id === id);
+        if (!item) return;
+
+        const finalSellingPrice = customSellingPrice ?? item.sellingPrice;
+        const newQuantity = Math.max(0, item.quantity - amountSold);
+        const profitGained = (finalSellingPrice - item.buyingPrice) * amountSold;
+        const newActualProfit = item.actualProfit + profitGained;
+
+        const updates = {
+            quantity: newQuantity,
+            isSold: newQuantity === 0,
+            actualProfit: newActualProfit,
+            soldAt: new Date().toISOString(),
+        };
+
+        const { data, error } = await supabase
+            .from('items')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Error marking item as sold:", error);
+            throw error;
+        }
+
+        if (data) {
+            setItems((prev) => prev.map((i) => i.id === id ? (data as Item) : i));
+        }
     };
 
-    const deleteItem = (id: string) => {
+    const deleteItem = async (id: string) => {
+        const { error } = await supabase
+            .from('items')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error("Error deleting item:", error);
+            throw error;
+        }
         setItems((prev) => prev.filter((item) => item.id !== id));
     };
 
@@ -73,7 +117,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     return (
-        <InventoryContext.Provider value={{ items, addItem, markAsSold, deleteItem, stats }}>
+        <InventoryContext.Provider value={{ items, addItem, markAsSold, deleteItem, stats, loading }}>
             {children}
         </InventoryContext.Provider>
     );

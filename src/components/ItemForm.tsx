@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useInventory } from "../context/InventoryContext";
 import { Upload, X, MapPin, DollarSign } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     const { addItem } = useInventory();
@@ -11,31 +12,64 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
     const [buyingPrice, setBuyingPrice] = useState("");
     const [sellingPrice, setSellingPrice] = useState("");
     const [quantity, setQuantity] = useState("1");
-    const [image, setImage] = useState<string>("");
+    const [imagePreview, setImagePreview] = useState<string>("");
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImage(reader.result as string);
+                setImagePreview(reader.result as string);
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        addItem({
-            name,
-            description,
-            location,
-            buyingPrice: parseFloat(buyingPrice) || 0,
-            sellingPrice: parseFloat(sellingPrice) || 0,
-            quantity: parseInt(quantity, 10) || 1,
-            imageBase64: image
-        });
-        onSuccess();
+        setIsUploading(true);
+        let imageUrl = "";
+
+        if (imageFile) {
+            const fileName = `${Date.now()}-${imageFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('item-images')
+                .upload(fileName, imageFile);
+
+            if (uploadError) {
+                console.error("Error uploading image:", uploadError);
+                alert("Failed to upload image. Make sure your Supabase Bucket 'item-images' exists and has public RLS policies.");
+                setIsUploading(false);
+                return;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('item-images')
+                .getPublicUrl(fileName);
+
+            imageUrl = publicUrl;
+        }
+
+        try {
+            await addItem({
+                name,
+                description,
+                location,
+                buyingPrice: parseFloat(buyingPrice) || 0,
+                sellingPrice: parseFloat(sellingPrice) || 0,
+                quantity: parseInt(quantity, 10) || 1,
+                imageUrl
+            });
+            onSuccess();
+        } catch (err) {
+            console.error("Error adding item:", err);
+            alert("Failed to add item. Check your database setup.");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     return (
@@ -125,13 +159,13 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
 
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Product Image</label>
-                        <div className={`relative border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden transition-colors ${image ? 'border-blue-300 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'} h-40`}>
-                            {image ? (
+                        <div className={`relative border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden transition-colors ${imagePreview ? 'border-blue-300 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50 hover:bg-gray-100'} h-40`}>
+                            {imagePreview ? (
                                 <>
-                                    <img src={image} alt="Preview" className="object-contain h-full w-full p-2" />
+                                    <img src={imagePreview} alt="Preview" className="object-contain h-full w-full p-2" />
                                     <button
                                         type="button"
-                                        onClick={() => setImage("")}
+                                        onClick={() => { setImagePreview(""); setImageFile(null); }}
                                         className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-md"
                                     >
                                         <X className="w-4 h-4" />
@@ -165,9 +199,10 @@ export const ItemForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
                 </button>
                 <button
                     type="submit"
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+                    disabled={isUploading}
+                    className={`px-6 py-2.5 text-white rounded-lg font-semibold shadow-lg shadow-blue-500/30 transition-all ${isUploading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'}`}
                 >
-                    Save Product
+                    {isUploading ? 'Saving...' : 'Save Product'}
                 </button>
             </div>
         </form>

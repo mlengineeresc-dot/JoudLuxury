@@ -6,7 +6,7 @@ export interface Item {
     buyingPrice: number;
     sellingPrice: number;
     actualProfit: number; // For actual profit
-    imageBase64: string; // Storing image string format for ease
+    imageUrl: string;
     quantity: number;
     initialQuantity: number;
     isSold: boolean;
