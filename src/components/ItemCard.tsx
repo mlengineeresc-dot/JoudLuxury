@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Item } from "../types";
 import { useInventory } from "../context/InventoryContext";
 import { Trash2, DollarSign, MapPin, CheckCircle, Store, Tag } from "lucide-react";
-import { format } from "date-fns";
+
 
 export const ItemCard: React.FC<{ item: Item }> = ({ item }) => {
     const { markAsSold, deleteItem } = useInventory();
